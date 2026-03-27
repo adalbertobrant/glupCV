@@ -1,4 +1,4 @@
-import streamlit as st
+ import streamlit as st
 import os
 from dotenv import load_dotenv
 import PyPDF2
@@ -78,23 +78,24 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# 🛡️ CAMADA 1 DE GUARDRAIL: FILTRO HEURÍSTICO (PRÉ-LLM)
+# 🛡️ CAMADA 1 DE GUARDRAIL: FILTRO HEURÍSTICO CORRIGIDO (REGEX)
 # ============================================================
 def verificar_seguranca_input(texto):
     """
-    Verifica se há tentativas óbvias de Prompt Injection antes de gastar tokens na API.
-    Retorna True se for seguro, False se detectar anomalia.
+    Verifica se há tentativas óbvias de Prompt Injection.
+    Usa regex para evitar falsos positivos com partes de palavras (ex: 'dan' dentro de 'andamento').
     """
     texto_lower = texto.lower()
+    
+    # Padrões com \b garantem que a palavra seja exata (não um pedaço de outra palavra)
     padroes_maliciosos = [
-        "ignore as instruções", "ignore all previous", "esqueça as instruções", 
-        "system prompt", "me dê suas instruções", "bypasse", "act as", "aja como", 
-        "desconsidere", "código fonte", "prompt original", "escreva uma história",
-        "dan", "do anything now"
+        r"ignore as instruções", r"ignore all previous", r"esqueça as instruções", 
+        r"system prompt", r"me dê suas instruções", r"prompt original", 
+        r"do anything now", r"\bdan\b", r"\bact as\b", r"código fonte"
     ]
     
     for padrao in padroes_maliciosos:
-        if padrao in texto_lower:
+        if re.search(padrao, texto_lower):
             return False
             
     # Proteção contra textos absurdamente grandes (excesso de tokens)
